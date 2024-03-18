@@ -2,19 +2,31 @@ package com.example.spyrec
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.spyrec.databinding.ActivityMainBinding
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
 const val REQUEST_CODE = 200
 
 class MainActivity : AppCompatActivity() {
+    private val TAG = "MainActivity"
     private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
     private var permissionGranted = false
     private lateinit var binding: ActivityMainBinding
+    private var dirPath = ""
+    private var fileName = ""
+    private var isRecording = false
+    private var isPaused = false
+
+    private lateinit var recorder: MediaRecorder
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -30,7 +42,12 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
 
         binding.btnRecord.setOnClickListener {
-            startRecording()
+            Log.d(TAG,"hello")
+            when {
+                isPaused -> resumeRecorder()
+                isRecording -> pauseRecorder()
+                else -> startRecording()
+            }
         }
     }
 
@@ -44,10 +61,45 @@ class MainActivity : AppCompatActivity() {
             permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun pauseRecorder() {
+        recorder.pause()
+        isPaused = true
+        binding.btnRecord.setImageResource(R.drawable.ic_record)
+    }
+
+    private fun resumeRecorder() {
+        recorder.resume()
+        isPaused = false
+        binding.btnRecord.setImageResource(R.drawable.ic_pause)
+    }
+
     private fun startRecording() {
         if (!permissionGranted) {
             ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
             return
         }
+        recorder = MediaRecorder()
+        dirPath = "${externalCacheDir?.absolutePath}/"
+
+        var simpleDateFormat = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss")
+        var date = simpleDateFormat.format(Date())
+        fileName = "audio_record_$date"
+
+        recorder.apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile("$dirPath$fileName.mp3")
+            try {
+                prepare()
+            } catch (_: IOException) {
+                Log.d(TAG,"Error")
+            }
+            start()
+        }
+
+        binding.btnRecord.setImageResource(R.drawable.ic_pause)
+        isRecording = true
+        isPaused = false
     }
 }
