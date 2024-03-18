@@ -16,7 +16,7 @@ import java.util.Date
 
 const val REQUEST_CODE = 200
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
     private val TAG = "MainActivity"
     private var permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
     private var permissionGranted = false
@@ -25,6 +25,8 @@ class MainActivity : AppCompatActivity() {
     private var fileName = ""
     private var isRecording = false
     private var isPaused = false
+
+    private lateinit var timer: Timer
 
     private lateinit var recorder: MediaRecorder
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,8 +43,10 @@ class MainActivity : AppCompatActivity() {
         if (!permissionGranted)
             ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
 
+        timer = Timer(this)
+
         binding.btnRecord.setOnClickListener {
-            Log.d(TAG,"hello")
+            Log.d(TAG, "hello")
             when {
                 isPaused -> resumeRecorder()
                 isRecording -> pauseRecorder()
@@ -65,12 +69,16 @@ class MainActivity : AppCompatActivity() {
         recorder.pause()
         isPaused = true
         binding.btnRecord.setImageResource(R.drawable.ic_record)
+
+        timer.pause()
     }
 
     private fun resumeRecorder() {
         recorder.resume()
         isPaused = false
         binding.btnRecord.setImageResource(R.drawable.ic_pause)
+
+        timer.start()
     }
 
     private fun startRecording() {
@@ -93,7 +101,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 prepare()
             } catch (_: IOException) {
-                Log.d(TAG,"Error")
+                Log.d(TAG, "Error")
             }
             start()
         }
@@ -101,5 +109,15 @@ class MainActivity : AppCompatActivity() {
         binding.btnRecord.setImageResource(R.drawable.ic_pause)
         isRecording = true
         isPaused = false
+
+        timer.start()
+    }
+
+    private fun stopRecorder() {
+        timer.stop()
+    }
+
+    override fun onTimerTick(duration: String) {
+        binding.tvTimer.text = duration
     }
 }
