@@ -1,9 +1,13 @@
 package com.example.spyrec
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -27,6 +31,7 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
     private var isPaused = false
 
     private lateinit var timer: Timer
+    private lateinit var vibrator: Vibrator
 
     private lateinit var recorder: MediaRecorder
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,13 +49,25 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
             ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
 
         timer = Timer(this)
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
         binding.btnRecord.setOnClickListener {
-            Log.d(TAG, "hello")
             when {
                 isPaused -> resumeRecorder()
                 isRecording -> pauseRecorder()
                 else -> startRecording()
+            }
+//            println("Build.VERSION.SDK_INT ${Build.VERSION.SDK_INT}")
+//            println("Build.VERSION_CODES.O ${Build.VERSION_CODES.O}")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        50,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
+            } else {
+                vibrator.vibrate(200)
             }
         }
     }
