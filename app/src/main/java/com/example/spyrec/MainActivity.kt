@@ -6,15 +6,20 @@ import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.spyrec.databinding.ActivityMainBinding
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -36,8 +41,9 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
     private lateinit var timer: Timer
     private lateinit var vibrator: Vibrator
     private lateinit var amplitudes: ArrayList<Float>
-
     private lateinit var recorder: MediaRecorder
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -45,12 +51,14 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
         setContentView(binding.root)
 
         permissionGranted = ActivityCompat.checkSelfPermission(
-            this,
-            permissions[0]
+            this, permissions[0]
         ) == PackageManager.PERMISSION_GRANTED
 
-        if (!permissionGranted)
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+        if (!permissionGranted) ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheet)
+        bottomSheetBehavior.peekHeight = 0
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
         timer = Timer(this)
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -66,8 +74,7 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(
                     VibrationEffect.createOneShot(
-                        50,
-                        VibrationEffect.DEFAULT_AMPLITUDE
+                        50, VibrationEffect.DEFAULT_AMPLITUDE
                     )
                 )
             } else {
@@ -81,6 +88,25 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
         binding.btnDone.setOnClickListener {
             stopRecorder()
             Toast.makeText(this, "Record saved", Toast.LENGTH_SHORT).show()
+
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            binding.bottomSheetBG.visibility = View.VISIBLE
+            binding.bottomSheet.filenameInput.setText(fileName)
+        }
+
+        binding.bottomSheet.btnCancel.setOnClickListener {
+            File("$dirPath$fileName.mp3").delete()
+            dismiss()
+        }
+
+        binding.bottomSheet.btnOk.setOnClickListener {
+            dismiss()
+            save()
+        }
+
+        binding.bottomSheetBG.setOnClickListener {
+            File("$dirPath$fileName.mp3").delete()
+            dismiss()
         }
 
         binding.btnDelete.setOnClickListener {
@@ -92,14 +118,34 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
         binding.btnDelete.isClickable = false
     }
 
+    private fun save() {
+        val newFilename = binding.bottomSheet.filenameInput.text.toString()
+        if (newFilename != fileName) {
+            var newFile = File("$dirPath$newFilename.mp3")
+            File("$dirPath$fileName.mp3").renameTo(newFile)
+        }
+    }
+
+    private fun dismiss() {
+        binding.bottomSheetBG.visibility = View.GONE
+        hideKeyboard(binding.bottomSheet.filenameInput)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }, 100)
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE)
-            permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
+        if (requestCode == REQUEST_CODE) permissionGranted =
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
     }
 
     private fun pauseRecorder() {

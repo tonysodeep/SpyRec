@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -75,8 +76,11 @@
         android:id="@+id/bottomSheetBG"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/opaqueBG" />
+        android:background="@color/opaqueBG"
+        android:visibility="gone" />
 
-    <include layout="@layout/bottom_sheet" />
+    <include
+        android:id="@+id/bottomSheet"
+        layout="@layout/bottom_sheet" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
