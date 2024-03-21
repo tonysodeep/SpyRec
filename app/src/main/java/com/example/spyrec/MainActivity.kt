@@ -2,6 +2,7 @@ package com.example.spyrec
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Build
@@ -96,7 +97,7 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
         }
 
         binding.btnList.setOnClickListener {
-            Toast.makeText(this, "List button", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, GalleryActivity::class.java))
         }
         binding.btnDone.setOnClickListener {
             stopRecorder()
