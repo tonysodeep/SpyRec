@@ -1,5 +1,6 @@
 package com.example.spyrec
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -45,7 +46,12 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     }
 
     override fun onItemClickListener(position: Int) {
-        Toast.makeText(this, "Simple click $position", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(this, "Simple click $position", Toast.LENGTH_SHORT).show()
+        var audioRecord = records[position]
+        var intent = Intent(this, AudioPlayerActivity::class.java)
+        intent.putExtra("filepath", audioRecord.filePath)
+        intent.putExtra("filename", audioRecord.filename)
+        startActivity(intent)
     }
 
     override fun onItemLongClickListener(position: Int) {
