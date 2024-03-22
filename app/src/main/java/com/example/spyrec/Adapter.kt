@@ -12,6 +12,18 @@ import java.util.Date
 class Adapter(var records: ArrayList<AudioRecord>, var listener: OnItemClickListener) :
     RecyclerView.Adapter<Adapter.ViewHolder>() {
 
+    private var editMode = false
+    fun isEditMode(): Boolean {
+        return editMode
+    }
+
+    fun setEditMode(mode: Boolean) {
+        if (editMode != mode) {
+            editMode = mode
+            notifyDataSetChanged()
+        }
+    }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
         View.OnClickListener, View.OnLongClickListener {
         var tvFilename: TextView = itemView.findViewById(R.id.tvFilename)
@@ -53,6 +65,14 @@ class Adapter(var records: ArrayList<AudioRecord>, var listener: OnItemClickList
             var date = Date(record.timestamp)
             var strDate = sdf.format(date)
             holder.tvMeta.text = "${record.duration} $strDate"
+
+            if (editMode) {
+                holder.checkBox.visibility = View.VISIBLE
+                holder.checkBox.isChecked = record.isChecked
+            } else {
+                holder.checkBox.visibility = View.GONE
+                holder.checkBox.isChecked = false
+            }
         }
     }
 

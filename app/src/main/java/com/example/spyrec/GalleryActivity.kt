@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
@@ -17,13 +17,21 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     private lateinit var mAdapter: Adapter
     private lateinit var db: AppDatabase
     private lateinit var binding: ActivityGalleryBinding
+    private var allChecked = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGalleryBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-        records = ArrayList()
 
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressed()
+        }
+
+        records = ArrayList()
         db = Room.databaseBuilder(
             this, AppDatabase::class.java, "audioRecords"
         ).build()
@@ -51,6 +59,21 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
 
             }
         })
+        binding.btnClose.setOnClickListener {
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            binding.editBar.visibility = View.GONE
+
+            records.map { it.isChecked = false }
+            mAdapter.setEditMode(false)
+        }
+
+        binding.btnSelectAll.setOnClickListener {
+            allChecked = !allChecked
+            records.map { it.isChecked = allChecked }
+            mAdapter.notifyDataSetChanged()
+        }
+
     }
 
     private fun searchDatabase(query: String) {
@@ -78,13 +101,28 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     override fun onItemClickListener(position: Int) {
 //        Toast.makeText(this, "Simple click $position", Toast.LENGTH_SHORT).show()
         var audioRecord = records[position]
-        var intent = Intent(this, AudioPlayerActivity::class.java)
-        intent.putExtra("filepath", audioRecord.filePath)
-        intent.putExtra("filename", audioRecord.filename)
-        startActivity(intent)
+        if (mAdapter.isEditMode()) {
+            records[position].isChecked = !records[position].isChecked
+            mAdapter.notifyItemChanged(position)
+        } else {
+            var intent = Intent(this, AudioPlayerActivity::class.java)
+            intent.putExtra("filepath", audioRecord.filePath)
+            intent.putExtra("filename", audioRecord.filename)
+            startActivity(intent)
+        }
+
     }
 
     override fun onItemLongClickListener(position: Int) {
-        Toast.makeText(this, "Long click $position", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(this, "Long click $position", Toast.LENGTH_SHORT).show()
+        mAdapter.setEditMode(true)
+        records[position].isChecked = !records[position].isChecked
+        mAdapter.notifyItemChanged(position)
+
+        if (mAdapter.isEditMode() && binding.editBar.visibility == View.GONE) {
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+            binding.editBar.visibility = View.VISIBLE
+        }
     }
 }
