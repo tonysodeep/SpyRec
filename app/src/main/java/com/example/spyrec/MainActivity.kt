@@ -202,8 +202,9 @@ class MainActivity : AppCompatActivity(), Timer.OnTimerTickListener {
         }
         recorder = MediaRecorder()
         dirPath = "${externalCacheDir?.absolutePath}/"
+        println("dirPath record current saved in cache ${dirPath}")
 
-        var simpleDateFormat = SimpleDateFormat("yyyy.MM.DD_hh.mm.ss")
+        var simpleDateFormat = SimpleDateFormat("yyyy.MM.dd_hh.mm.ss")
         var date = simpleDateFormat.format(Date())
         fileName = "audio_record_$date"
 
