@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
@@ -13,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.spyrec.databinding.ActivityGalleryBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -107,7 +110,38 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
             val dialog = builder.create()
             dialog.show()
         }
+        binding.btnEdit.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            val dialogView = this.layoutInflater.inflate(R.layout.rename_layout, null)
+            builder.setView(dialogView)
+            val dialog = builder.create()
 
+            val record = records.filter { it.isChecked }.get(0)
+            val textInput = dialogView.findViewById<TextInputEditText>(R.id.filenameInput)
+            textInput.setText(record.filename)
+
+            dialogView.findViewById<Button>(R.id.btnSave).setOnClickListener {
+                val input = textInput.text.toString()
+                if (input.isEmpty()) {
+                    Toast.makeText(this, "A name is required", Toast.LENGTH_SHORT).show()
+                } else {
+                    record.filename = input
+                    GlobalScope.launch {
+                        db.audioRecordDao().update(record)
+                        runOnUiThread {
+                            mAdapter.notifyItemChanged(records.indexOf(record))
+                            dialog.dismiss()
+                            leaveEditMode()
+                        }
+                    }
+                }
+            }
+            dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+        }
     }
 
     private fun leaveEditMode() {
@@ -115,6 +149,7 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.editBar.visibility = View.GONE
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
         records.map { it.isChecked = false }
         mAdapter.setEditMode(false)
