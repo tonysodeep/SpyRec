@@ -20,6 +20,7 @@
             android:exported="false" />
         <activity
             android:name=".GalleryActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

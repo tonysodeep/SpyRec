@@ -5,10 +5,12 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.spyrec.databinding.ActivityGalleryBinding
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -17,6 +19,8 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     private lateinit var mAdapter: Adapter
     private lateinit var db: AppDatabase
     private lateinit var binding: ActivityGalleryBinding
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<LinearLayout>
+
     private var allChecked = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +34,9 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
         }
+
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet)
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
         records = ArrayList()
         db = Room.databaseBuilder(
@@ -63,6 +70,7 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             binding.editBar.visibility = View.GONE
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
             records.map { it.isChecked = false }
             mAdapter.setEditMode(false)
@@ -118,6 +126,8 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
         mAdapter.setEditMode(true)
         records[position].isChecked = !records[position].isChecked
         mAdapter.notifyItemChanged(position)
+
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
 
         if (mAdapter.isEditMode() && binding.editBar.visibility == View.GONE) {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
