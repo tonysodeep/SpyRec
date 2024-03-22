@@ -2,6 +2,8 @@ package com.example.spyrec
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +36,34 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
         }
 
         fetchAll()
+
+        binding.searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                var query = s.toString()
+                searchDatabase(query)
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+
+            }
+        })
+    }
+
+    private fun searchDatabase(query: String) {
+        GlobalScope.launch {
+            records.clear()
+            var queryResult = db.audioRecordDao().searchDatabase("%$query%")
+            records.addAll(queryResult)
+
+            runOnUiThread {
+                mAdapter.notifyDataSetChanged()
+            }
+
+        }
     }
 
     private fun fetchAll() {
