@@ -1,6 +1,7 @@
 package com.example.spyrec
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
@@ -8,7 +9,7 @@ import com.example.spyrec.databinding.ActivityGalleryBinding
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-class GalleryActivity : AppCompatActivity() {
+class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     private lateinit var records: ArrayList<AudioRecord>
     private lateinit var mAdapter: Adapter
     private lateinit var db: AppDatabase
@@ -24,7 +25,7 @@ class GalleryActivity : AppCompatActivity() {
             this, AppDatabase::class.java, "audioRecords"
         ).build()
 
-        mAdapter = Adapter(records)
+        mAdapter = Adapter(records, this)
 
         binding.recyclerview.apply {
             adapter = mAdapter
@@ -41,5 +42,13 @@ class GalleryActivity : AppCompatActivity() {
             records.addAll(queryResult)
             mAdapter.notifyDataSetChanged()
         }
+    }
+
+    override fun onItemClickListener(position: Int) {
+        Toast.makeText(this, "Simple click $position", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onItemLongClickListener(position: Int) {
+        Toast.makeText(this, "Long click $position", Toast.LENGTH_SHORT).show()
     }
 }
