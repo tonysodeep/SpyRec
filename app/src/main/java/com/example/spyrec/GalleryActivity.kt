@@ -6,7 +6,9 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.spyrec.databinding.ActivityGalleryBinding
@@ -67,21 +69,108 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
             }
         })
         binding.btnClose.setOnClickListener {
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            binding.editBar.visibility = View.GONE
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            leaveEditMode()
 
-            records.map { it.isChecked = false }
-            mAdapter.setEditMode(false)
         }
 
         binding.btnSelectAll.setOnClickListener {
             allChecked = !allChecked
             records.map { it.isChecked = allChecked }
             mAdapter.notifyDataSetChanged()
+            if (allChecked) {
+                disableRename()
+                enableDelete()
+            } else {
+                disableDelete()
+                disableRename()
+            }
         }
 
+        binding.btnDelete.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Delete Record ?")
+            val nbRecords = records.count { it.isChecked }
+            builder.setMessage("Are you sure you want to delete $nbRecords record(s) ?")
+
+            builder.setPositiveButton("Delete") { _, _ ->
+                val toDelete = records.filter { it.isChecked }.toTypedArray()
+                GlobalScope.launch {
+                    db.audioRecordDao().delete(toDelete)
+                    runOnUiThread {
+                        records.removeAll(toDelete)
+                        mAdapter.notifyDataSetChanged()
+                        leaveEditMode()
+                    }
+                }
+            }
+            builder.setNegativeButton("Cancel") { _, _ -> }
+            val dialog = builder.create()
+            dialog.show()
+        }
+
+    }
+
+    private fun leaveEditMode() {
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.editBar.visibility = View.GONE
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+
+        records.map { it.isChecked = false }
+        mAdapter.setEditMode(false)
+    }
+
+
+    private fun disableRename() {
+        binding.btnEdit.isClickable = false
+        binding.btnEdit.backgroundTintList =
+            ResourcesCompat.getColorStateList(resources, R.color.grayDarkDisabled, theme)
+        binding.tvEdit.setTextColor(
+            ResourcesCompat.getColorStateList(
+                resources,
+                R.color.grayDarkDisabled,
+                theme
+            )
+        )
+    }
+
+    private fun disableDelete() {
+        binding.btnDelete.isClickable = false
+        binding.tvDelete.backgroundTintList =
+            ResourcesCompat.getColorStateList(resources, R.color.grayDarkDisabled, theme)
+        binding.tvEdit.setTextColor(
+            ResourcesCompat.getColorStateList(
+                resources,
+                R.color.grayDarkDisabled,
+                theme
+            )
+        )
+    }
+
+    private fun enableRename() {
+        binding.btnEdit.isClickable = true
+        binding.btnEdit.backgroundTintList =
+            ResourcesCompat.getColorStateList(resources, R.color.grayDark, theme)
+        binding.tvEdit.setTextColor(
+            ResourcesCompat.getColorStateList(
+                resources,
+                R.color.grayDark,
+                theme
+            )
+        )
+    }
+
+    private fun enableDelete() {
+        binding.btnDelete.isClickable = true
+        binding.tvDelete.backgroundTintList =
+            ResourcesCompat.getColorStateList(resources, R.color.grayDarkDisabled, theme)
+        binding.tvEdit.setTextColor(
+            ResourcesCompat.getColorStateList(
+                resources,
+                R.color.grayDark,
+                theme
+            )
+        )
     }
 
     private fun searchDatabase(query: String) {
@@ -107,11 +196,28 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
     }
 
     override fun onItemClickListener(position: Int) {
-//        Toast.makeText(this, "Simple click $position", Toast.LENGTH_SHORT).show()
         var audioRecord = records[position]
         if (mAdapter.isEditMode()) {
             records[position].isChecked = !records[position].isChecked
             mAdapter.notifyItemChanged(position)
+
+            var nbSelected = records.count { it.isChecked }
+            when (nbSelected) {
+                0 -> {
+                    disableRename()
+                    disableDelete()
+                }
+
+                1 -> {
+                    enableRename()
+                    enableDelete()
+                }
+
+                else -> {
+                    disableRename()
+                    enableDelete()
+                }
+            }
         } else {
             var intent = Intent(this, AudioPlayerActivity::class.java)
             intent.putExtra("filepath", audioRecord.filePath)
@@ -133,6 +239,8 @@ class GalleryActivity : AppCompatActivity(), OnItemClickListener {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
             binding.editBar.visibility = View.VISIBLE
+            enableDelete()
+            enableRename()
         }
     }
 }
